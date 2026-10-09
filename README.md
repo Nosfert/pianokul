@@ -17,19 +17,21 @@ Scripts:
     npm test            Pure-core and jsdom component tests
     npm run build       Static output in build/
     npm run preview     Preview the production build
-    npm run preview:pages   Build and serve with Wrangler Pages locally
-    npm run deploy      Build and upload a Cloudflare Pages deployment
+    npm run preview:cf  Serve build/ locally with Wrangler (run npm run build first)
+    npm run deploy      Build and deploy to Cloudflare (wrangler deploy)
     node scripts/verify.mjs   Clean install, all checks, tests, build and output checks
 
 The verification script stops on errors. It does not repair them. No running dev server is used for automated verification. There is no backend, account or database.
 
-## Cloudflare Pages
+## Cloudflare deployment
 
-For Git integration, create a Pages project named `pianokul`, connect this repository and select the production branch you intend to release (usually `main`). Use build command `npm run build`, output directory `build`, root directory the repo root and `NODE_VERSION=24`. Do not use the Workers static-assets deployment flow: the Wrangler config uses `pages_build_output_dir`, not `[assets]`.
+The site deploys as Cloudflare Workers static assets (`wrangler.toml`: `[assets] directory = "./build"`, no Worker script). `wrangler deploy` runs the `[build]` command (`npm run build`) first, then uploads build/.
 
-For direct upload, authenticate with `npx --yes wrangler@4 login` once, then run `npm run deploy`. The CLI may create a Pages project if it does not exist. Never store account tokens in the repository. A deployment from the plan-moe branch is a preview unless you deliberately select your production branch. Authentication and live deployment are manual release steps, not automated tests.
+Git integration (Workers & Pages → Create → Import a repository): connect this repo, production branch `main`, root directory the repo root. Keep the default deploy command `npx wrangler deploy`; the build command can stay empty (wrangler builds) or be `npm run build`. Set `NODE_VERSION=24`. The site is served at `https://pianokul.<your-subdomain>.workers.dev`.
 
-For a local Pages preview, run `npm run preview:pages`. The default Wrangler port is 8788; use `npx --yes wrangler@4 pages dev build --port 8789` if it is occupied. Open the address printed by Wrangler. `_headers` is copied into build/ and controls caching and basic response headers.
+Direct deploy: run `npx --yes wrangler@4 login` once, then `npm run deploy`. Never store account tokens in the repository.
+
+Local preview: `npm run build && npm run preview:cf`, then open the address Wrangler prints. `_headers` is copied into build/ and controls caching and basic response headers.
 
 The app uses hash links such as `/#/learn/keyboard`, so refreshing a lesson loads the same static index.html. No `_redirects` file or Pages Functions are needed. Serve it at the domain root. Opening build/index.html with `file://` is not supported; use a web server.
 
@@ -45,7 +47,7 @@ Use mouse/touch, or Tab to a piano key and press Space/Enter. Free play also sup
 
 Put the iPad on the music stand and press "🎤 Listen to my piano" in a lesson, practice, test or free play. Each key heard on the real piano is checked like a tap on the screen. Settings → "Set up my piano" (`/#/mic`) calibrates once per piano/room: it measures room noise, then asks for C4, E4 and G4 (saying "wrong key" or "wrong octave" when needed) and stores the piano's tuning offset under `pianokul.mic.v1`.
 
-Detection is monophonic (one key at a time) using the McLeod pitch method in the browser; no audio leaves the device. Echo cancellation/noise suppression are disabled because they smear piano tones, and the mic ignores the app's own synth while it sounds. Chords and very low notes are not reliable. The microphone requires HTTPS (or localhost): it works on the Cloudflare Pages deployment, not on `http://<lan-ip>:5173`. "Name the key" questions are answered on screen. Real-hardware accuracy has been tested with simulated piano audio only.
+Detection is monophonic (one key at a time) using the McLeod pitch method in the browser; no audio leaves the device. Echo cancellation/noise suppression are disabled because they smear piano tones, and the mic ignores the app's own synth while it sounds. Chords and very low notes are not reliable. The microphone requires HTTPS (or localhost): it works on the Cloudflare deployment, not on `http://<lan-ip>:5173`. "Name the key" questions are answered on screen. Real-hardware accuracy has been tested with simulated piano audio only.
 
 Sound uses a small Web Audio synthesizer, not recorded piano samples. Sound starts from user interaction; Settings can mute it. Motion respects both system reduced-motion preferences and the in-app toggle.
 

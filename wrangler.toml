@@ -1,4 +1,11 @@
-# Cloudflare Pages: a static SPA, no Functions and no Worker script.
-name = 'pianokul'
+# Cloudflare Workers static assets: the static SPA in build/, no Worker script.
+# `npx wrangler deploy` (the default deploy command for a Git-connected Cloudflare
+# project) runs the [build] command first, then uploads build/.
+name = "pianokul"
 compatibility_date = "2026-09-01"
-pages_build_output_dir = "./build"
+
+[build]
+command = "npm run build"
+
+[assets]
+directory = "./build"
